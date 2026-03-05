@@ -157,14 +157,22 @@ const OrderCheckout = () => {
             </button>
           </div>
           {address ? (
-            <div>
-              <p className="text-sm font-medium text-brand-800">{user?.email}</p>
-              <p className="text-sm text-brand-600 mt-0.5">
-                ({address.zipcode}) {address.address}
-              </p>
-              {address.addressDetail && (
-                <p className="text-sm text-brand-600">{address.addressDetail}</p>
-              )}
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                <span className="text-xs text-brand-400 w-12 flex-shrink-0 pt-0.5">이름</span>
+                <span className="text-sm text-brand-800">{address.name || user?.name || user?.email}</span>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-xs text-brand-400 w-12 flex-shrink-0 pt-0.5">연락처</span>
+                <span className="text-sm text-brand-800">{address.phone || '-'}</span>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-xs text-brand-400 w-12 flex-shrink-0 pt-0.5">주소</span>
+                <span className="text-sm text-brand-800">
+                  ({address.zipcode}) {address.address}
+                  {address.addressDetail && <><br />{address.addressDetail}</>}
+                </span>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-3">

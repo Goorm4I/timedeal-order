@@ -50,10 +50,10 @@ export const register = async ({ email, password, name, phone }) => {
 };
 
 // 배송지 저장 (localStorage에 유저별로 저장)
-export const saveAddress = ({ zipcode, address, addressDetail }) => {
+export const saveAddress = ({ name, phone, zipcode, address, addressDetail }) => {
   const user = getCurrentUser();
   if (!user) return;
-  const addressData = { zipcode, address, addressDetail };
+  const addressData = { name, phone, zipcode, address, addressDetail };
   localStorage.setItem(`address_${user.id}`, JSON.stringify(addressData));
   // 현재 유저 세션에도 반영
   const storage = localStorage.getItem('user') ? localStorage : sessionStorage;

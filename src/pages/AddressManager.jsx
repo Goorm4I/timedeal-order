@@ -6,7 +6,7 @@ const AddressManager = () => {
   const navigate = useNavigate();
   const user = getCurrentUser();
 
-  const [form, setForm] = useState({ zipcode: '', address: '', addressDetail: '' });
+  const [form, setForm] = useState({ name: '', phone: '', zipcode: '', address: '', addressDetail: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,6 +40,8 @@ const AddressManager = () => {
 
   const validate = () => {
     const newErrors = {};
+    if (!form.name) newErrors.name = '수령인 이름을 입력해주세요.';
+    if (!form.phone) newErrors.phone = '연락처를 입력해주세요.';
     if (!form.zipcode || !form.address) newErrors.address = '주소 검색을 통해 주소를 입력해주세요.';
     if (!form.addressDetail) newErrors.addressDetail = '상세주소를 입력해주세요.';
     return newErrors;
@@ -93,7 +95,10 @@ const AddressManager = () => {
               <span className="text-brand-500">📦</span>
               <p className="text-sm font-semibold text-brand-700">현재 등록된 배송지</p>
             </div>
-            <p className="text-sm text-brand-800">
+            {hasAddress.name && (
+              <p className="text-sm font-medium text-brand-800">{hasAddress.name} {hasAddress.phone && <span className="font-normal text-brand-500">| {hasAddress.phone}</span>}</p>
+            )}
+            <p className="text-sm text-brand-800 mt-0.5">
               ({hasAddress.zipcode}) {hasAddress.address}
             </p>
             <p className="text-sm text-brand-600 mt-0.5">{hasAddress.addressDetail}</p>
@@ -107,6 +112,40 @@ const AddressManager = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 수령인 이름 */}
+            <div>
+              <label className="block text-sm font-medium text-brand-700 mb-1.5">수령인 이름</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => {
+                  setForm(prev => ({ ...prev, name: e.target.value }));
+                  setErrors(prev => ({ ...prev, name: '' }));
+                }}
+                placeholder="수령인 이름을 입력해주세요"
+                className={`w-full px-4 py-3 rounded-2xl border focus:outline-none text-brand-800 placeholder-brand-300 transition
+                  ${errors.name ? 'border-red-400' : 'border-brand-200 focus:border-brand-500'}`}
+              />
+              {errors.name && <p className="mt-1.5 text-xs text-red-500">{errors.name}</p>}
+            </div>
+
+            {/* 연락처 */}
+            <div>
+              <label className="block text-sm font-medium text-brand-700 mb-1.5">연락처</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => {
+                  setForm(prev => ({ ...prev, phone: e.target.value }));
+                  setErrors(prev => ({ ...prev, phone: '' }));
+                }}
+                placeholder="010-0000-0000"
+                className={`w-full px-4 py-3 rounded-2xl border focus:outline-none text-brand-800 placeholder-brand-300 transition
+                  ${errors.phone ? 'border-red-400' : 'border-brand-200 focus:border-brand-500'}`}
+              />
+              {errors.phone && <p className="mt-1.5 text-xs text-red-500">{errors.phone}</p>}
+            </div>
+
             {/* 우편번호 + 검색 버튼 */}
             <div>
               <label className="block text-sm font-medium text-brand-700 mb-1.5">주소</label>
