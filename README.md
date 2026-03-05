@@ -25,15 +25,13 @@ PG 결제 (PGSimulator)
 결과 (/order/:id)
 ```
 
-## 연동 백엔드 API
+## 백엔드 API 예시
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | `POST` | `/api/orders` | 주문 생성 + Redis DECR (재고 선점) |
 | `POST` | `/api/orders/{orderId}/pay` | 결제 확정 (백엔드 → PG 호출) |
 | `GET`  | `/api/orders/{orderId}` | 주문 상태 조회 |
-
-> 백엔드 레포: [Goorm4I/timedeal-backend](https://github.com/Goorm4I/timedeal-backend)
 
 ## Mock PG 서버
 
