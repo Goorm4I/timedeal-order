@@ -21,6 +21,15 @@ const OrderCheckout = () => {
   const user = getCurrentUser();
   const address = getAddress();
 
+  // ── 포인트/쿠폰 (추후 백엔드 연동) ──────────────────────────
+  // TODO: 실제 보유 포인트는 GET /api/users/me/points 로 조회
+  // TODO: 쿠폰은 GET /api/coupons?userId= 로 조회
+  const BBOSHI_POINT_RATE = 0.01;          // 뽀시페이 적립률 1% (백엔드 정책 따라 변경)
+  const earnedPoints = deal
+    ? Math.floor(deal.discountPrice * BBOSHI_POINT_RATE)
+    : 0;
+  // ────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     fetchDeal();
@@ -188,7 +197,13 @@ const OrderCheckout = () => {
                   {method.icon}
                 </div>
                 <span className="flex-1 text-left font-medium text-brand-800 text-sm">{method.name}</span>
-                {paymentMethod === method.id && (
+                {/* 뽀시페이 선택 시 적립 뱃지 */}
+                {method.id === 'bboshi' && paymentMethod === 'bboshi' && (
+                  <span className="text-xs font-semibold text-orange-500 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                    +{earnedPoints.toLocaleString()}P 적립
+                  </span>
+                )}
+                {method.id !== 'bboshi' && paymentMethod === method.id && (
                   <div className="w-5 h-5 bg-brand-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -197,6 +212,27 @@ const OrderCheckout = () => {
                 )}
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* 할인/혜택 — 추후 쿠폰·포인트 연동 시 이 섹션 활성화 */}
+        <section className="bg-white rounded-2xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-brand-500 uppercase tracking-wide mb-3">할인/혜택</p>
+          <div className="space-y-3">
+            {/* 쿠폰 TODO: 쿠폰 API 연동 후 활성화 */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-brand-700">쿠폰</span>
+              <span className="text-xs text-brand-300 border border-dashed border-brand-200 px-3 py-1.5 rounded-lg cursor-not-allowed">
+                준비 중
+              </span>
+            </div>
+            {/* 포인트 TODO: 포인트 API 연동 후 활성화 */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-brand-700">포인트</span>
+              <span className="text-xs text-brand-300 border border-dashed border-brand-200 px-3 py-1.5 rounded-lg cursor-not-allowed">
+                준비 중
+              </span>
+            </div>
           </div>
         </section>
 
@@ -212,11 +248,28 @@ const OrderCheckout = () => {
               <span className="text-brand-500">배송비</span>
               <span className="text-green-600 font-medium">무료</span>
             </div>
+            {/* 쿠폰 할인 TODO: 활성화 시 표시 */}
+            {/* <div className="flex justify-between">
+              <span className="text-brand-500">쿠폰 할인</span>
+              <span className="text-red-500">-0원</span>
+            </div> */}
+            {/* 포인트 사용 TODO: 활성화 시 표시 */}
+            {/* <div className="flex justify-between">
+              <span className="text-brand-500">포인트 사용</span>
+              <span className="text-red-500">-0P</span>
+            </div> */}
           </div>
           <div className="border-t border-brand-100 mt-3 pt-3 flex justify-between items-center">
             <span className="font-bold text-brand-800">총 결제금액</span>
             <span className="text-2xl font-bold text-brand-800">{deal.discountPrice.toLocaleString()}원</span>
           </div>
+          {/* 뽀시페이 적립 예정 포인트 */}
+          {paymentMethod === 'bboshi' && (
+            <div className="mt-2 pt-2 border-t border-dashed border-orange-200 flex justify-between items-center">
+              <span className="text-xs text-orange-500">뽀시페이 적립 예정</span>
+              <span className="text-sm font-bold text-orange-500">+{earnedPoints.toLocaleString()}P</span>
+            </div>
+          )}
         </section>
 
         {/* 품절 오류 */}
