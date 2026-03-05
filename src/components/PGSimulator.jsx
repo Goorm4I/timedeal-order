@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { getCurrentUser, getAddress } from '../api/auth';
 
 const MOCK_PG_URL = '/mock-pg'; // 로컬: CRA 프록시 경유 / 배포: Mock PG 서버 CORS 허용 필요
 
@@ -68,7 +67,7 @@ const pgStyles = {
 
 const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
   const getInitialStep = () => {
-    if (paymentMethod === 'bboshi') return 'info';
+    if (paymentMethod === 'bboshi') return 'auth'; // 주문서에서 이미 상품/금액/배송지 확인 완료
     if (paymentMethod === 'card') return 'processing';
     return 'appRedirect'; // kakao, toss
   };
@@ -78,8 +77,6 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
   const [pgResult, setPgResult] = useState(null);
   const intervalRef = useRef(null);
 
-  const user = getCurrentUser();
-  const address = getAddress();
   const pg = pgStyles[paymentMethod];
 
   // 카드: 마운트 즉시 Mock PG 호출
@@ -144,8 +141,6 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
     }, 100);
   };
 
-  const bboshiBalance = 500000;
-  const canPay = bboshiBalance >= deal.discountPrice;
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-100 flex flex-col">
@@ -178,85 +173,7 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 max-w-md mx-auto pb-16">
 
-          {/* ── 뽀시페이: 잔액 확인 ── */}
-          {step === 'info' && (
-            <div className="space-y-4">
-              <div className={`${pg.bg} rounded-2xl p-4`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow overflow-hidden">
-                    {pg.icon}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800">{user?.email ?? '회원'}님</p>
-                    <p className="text-sm text-gray-500">{user?.phone ?? '-'}</p>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl p-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-sm">뽀시페이 잔액</span>
-                    <span className="font-bold text-lg text-gray-800">{bboshiBalance.toLocaleString()}원</span>
-                  </div>
-                </div>
-              </div>
-
-              {address ? (
-                <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-500 mb-2">📦 배송지</p>
-                  <p className="text-sm font-medium text-gray-800">{user?.phone ?? '-'}</p>
-                  <p className="text-sm text-gray-600 mt-1">({address.zipcode}) {address.address}</p>
-                  {address.addressDetail && <p className="text-sm text-gray-600">{address.addressDetail}</p>}
-                </div>
-              ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                  <p className="text-sm text-amber-700 text-center">
-                    📦 배송지가 등록되지 않았습니다.<br />
-                    <span className="text-xs">마이페이지에서 배송지를 먼저 등록해주세요.</span>
-                  </p>
-                </div>
-              )}
-
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex gap-3">
-                  <img src={deal.productImage} alt={deal.productName} className="w-16 h-16 rounded-xl object-cover" />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800 line-clamp-2 text-sm">{deal.productName}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-gray-500">상품 금액</span>
-                  <span className="text-gray-800">{deal.discountPrice.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-gray-500">배송비</span>
-                  <span className="text-green-600">무료</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between items-center">
-                  <span className="font-bold text-gray-800">총 결제금액</span>
-                  <span className="font-bold text-2xl text-primary-500">{deal.discountPrice.toLocaleString()}원</span>
-                </div>
-              </div>
-
-              {!canPay && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-red-600 text-sm text-center">❌ 잔액이 부족합니다. 충전 후 이용해주세요.</p>
-                </div>
-              )}
-
-              <button
-                onClick={() => setStep('auth')}
-                disabled={!canPay}
-                className={`w-full py-4 rounded-xl font-bold text-lg text-white transition bg-gradient-to-r ${pg.color}
-                  ${canPay ? 'hover:opacity-90 active:scale-[0.98]' : 'opacity-50 cursor-not-allowed'}`}
-              >
-                {deal.discountPrice.toLocaleString()}원 결제하기
-              </button>
-            </div>
-          )}
-
-          {/* ── 뽀시페이: 핀 입력 ── */}
+          {/* ── 뽀시페이: 핀 입력 (주문서에서 이미 상품/금액/배송지 확인 완료) ── */}
           {step === 'auth' && (
             <div className="space-y-6 pt-8">
               <div className="text-center">
