@@ -1,70 +1,72 @@
-# Getting Started with Create React App
+# timedeal-order
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+뽀시래기 타임딜 — 주문서 페이지 프론트엔드
 
-## Available Scripts
+기존 `timedeal-frontend`의 결제 플로우를 독립 페이지 기반으로 재설계한 레포입니다.
+MSA 전환 시 order-service와 1:1 연동을 고려한 구조로 구성되어 있습니다.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 결제 흐름
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+상품 상세 (/deal/:id)
+    ↓ 구매하기
+주문서 (/order/checkout/:id)       ← 이 레포의 핵심
+  - 배송지 확인/변경
+  - 결제 수단 선택
+  - 최종 금액 확인
+    ↓ 결제하기 → createOrder (Redis DECR, 재고 선점)
+PG 결제 (PGSimulator)
+  - 뽀시페이: 잔액 확인 → 핀 입력
+  - 카카오/토스: 앱 연결 시뮬레이션
+  - 신용카드: Mock PG 서버 실제 호출
+    ↓ payOrder (결제 확정)
+결과 (/order/:id)
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 연동 백엔드 API
 
-### `npm test`
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| `POST` | `/api/orders` | 주문 생성 + Redis DECR (재고 선점) |
+| `POST` | `/api/orders/{orderId}/pay` | 결제 확정 (백엔드 → PG 호출) |
+| `GET`  | `/api/orders/{orderId}` | 주문 상태 조회 |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+> 백엔드 레포: [Goorm4I/timedeal-backend](https://github.com/Goorm4I/timedeal-backend)
 
-### `npm run build`
+## Mock PG 서버
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+신용카드 결제는 실제 GCP Cloud Run에 배포된 Mock PG 서버와 통신합니다.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+POST /mock-pg/pay   →   (CRA 프록시 경유)   →   GCP Mock PG
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+개발 환경에서는 `src/setupProxy.js`가 CORS를 우회합니다.
 
-### `npm run eject`
+## 환경변수
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+# .env.example 복사 후 수정
+cp .env.example .env
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `REACT_APP_USE_MOCK` | `true` | Mock 모드 여부 |
+| `REACT_APP_API_URL` | `http://localhost:8080` | 백엔드 API 주소 |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 실행
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm install
+npm start       # 개발 서버 (localhost:3000)
+npm run build   # 프로덕션 빌드
+```
 
-## Learn More
+## 향후 계획
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 포인트 시스템 연동 (주문서 페이지 포인트 적용 UI)
+- 주문 목록 조회 (마이페이지)
+- MSA 전환 시 order-service 독립 배포 대응
