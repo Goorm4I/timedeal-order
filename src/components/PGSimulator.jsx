@@ -96,34 +96,14 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
   const startCardPayment = () => {
     let p = 0;
     intervalRef.current = setInterval(() => {
-      p += 2;
-      setProgress(Math.min(p, 80));
-      if (p >= 80) clearInterval(intervalRef.current);
+      p += 5;
+      setProgress(Math.min(p, 100));
+      if (p >= 100) {
+        clearInterval(intervalRef.current);
+        setStep('done');
+        setTimeout(() => onComplete(null), 800);
+      }
     }, 80);
-
-    fetch(`${MOCK_PG_URL}/pay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: `order_${deal.id}_${Date.now()}`, amount: deal.discountPrice }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        clearInterval(intervalRef.current);
-        setProgress(100);
-        console.log('[Mock PG 응답]', data);
-        setPgResult(data);
-        if (data.code === 0 && data.response?.status === 'paid') {
-          setStep('done');
-          setTimeout(() => onComplete(data.response), 800);
-        } else {
-          setStep('pgFailed');
-        }
-      })
-      .catch(err => {
-        clearInterval(intervalRef.current);
-        console.error('[Mock PG 오류]', err);
-        setStep('pgFailed');
-      });
   };
 
   // 뽀시페이 전용: 핀 입력 후 결제 처리

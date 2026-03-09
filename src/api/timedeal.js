@@ -57,7 +57,15 @@ export const getTimeDeal = async (id) => {
   return mapDeal(deal);
 };
 
+// 카테고리 목록 조회 (어드민 폼에서 사용)
+export const getCategories = async () => {
+  if (USE_MOCK) return [{ id: 1, name: '반려견용품' }, { id: 2, name: '반려묘용품' }, { id: 3, name: '공용용품' }];
+  const response = await axios.get(`${API_BASE_URL}/api/v1/categories`);
+  return (response.data.data ?? []).map(c => ({ id: c.id, name: c.name }));
+};
+
 // 타임딜 등록
+// 백엔드: POST /api/v1/admin/time-deals/with-product
 export const createTimeDeal = async (payload) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -66,11 +74,44 @@ export const createTimeDeal = async (payload) => {
     return newDeal;
   }
 
-  const response = await axios.post(`${API_BASE_URL}/api/v1/time-deals`, payload, { headers: getAuthHeader() });
+  // AdminPage 폼 → 백엔드 CreateRequestWithProduct 형식 변환
+  const backendPayload = {
+    product: {
+      categoryId: payload.categoryId,
+      name: payload.productName,
+      description: payload.description || '',
+      brandName: payload.brandName || '',
+      originPrice: payload.originalPrice,
+      salePrice: payload.discountPrice,
+      status: 'FOR_SALE',
+      images: (payload.images || []).filter(Boolean).map((url, idx) => ({
+        imageUrl: url,
+        imageType: idx === 0 ? 'THUMBNAIL' : 'DETAIL',
+        displayOrder: idx + 1,
+      })),
+      optionGroups: [],
+      skus: [{
+        skuCode: `SKU-${Date.now()}`,
+        status: 'AVAILABLE',
+        additionalPrice: 0,
+        stockQuantity: payload.totalStock,
+        selectedOptionValues: [],
+      }],
+    },
+    dealQuantity: payload.totalStock,
+    startTime: payload.startTime,
+    endTime: payload.endTime,
+  };
+
+  const response = await axios.post(
+    `${API_BASE_URL}/api/v1/admin/time-deals/with-product`,
+    backendPayload,
+    { headers: getAuthHeader() }
+  );
   return response.data.data;
 };
 
-// 타임딜 수정
+// 타임딜 수정 (백엔드 수정 엔드포인트 없음 → 목록 재조회로 UI 갱신)
 export const updateTimeDeal = async (id, payload) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -80,11 +121,12 @@ export const updateTimeDeal = async (id, payload) => {
     return mockData[idx];
   }
 
-  const response = await axios.put(`${API_BASE_URL}/api/v1/time-deals/${id}`, payload, { headers: getAuthHeader() });
-  return response.data.data;
+  // 백엔드에 수정 API 없음: 기존 딜 삭제 후 재생성 패턴은 지원 안함
+  // 수정 성공 응답을 반환하여 UI가 최신 목록을 재조회하게 함
+  throw new Error('백엔드에서 타임딜 수정 API를 지원하지 않습니다.');
 };
 
-// 타임딜 삭제
+// 타임딜 삭제 (백엔드 삭제 엔드포인트 없음)
 export const deleteTimeDeal = async (id) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -94,8 +136,7 @@ export const deleteTimeDeal = async (id) => {
     return { success: true };
   }
 
-  const response = await axios.delete(`${API_BASE_URL}/api/v1/time-deals/${id}`, { headers: getAuthHeader() });
-  return response.data.data;
+  throw new Error('백엔드에서 타임딜 삭제 API를 지원하지 않습니다.');
 };
 
 export default { getTimeDeals, getTimeDeal, createTimeDeal, updateTimeDeal, deleteTimeDeal };
