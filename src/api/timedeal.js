@@ -15,7 +15,7 @@ export const getTimeDeals = async () => {
   }
 
   const response = await axios.get(`${API_BASE_URL}/api/timedeals`);
-  return response.data;
+  return response.data.data;
 };
 
 // 타임딜 상세 조회
@@ -28,7 +28,7 @@ export const getTimeDeal = async (id) => {
   }
 
   const response = await axios.get(`${API_BASE_URL}/api/timedeals/${id}`);
-  return response.data;
+  return response.data.data;
 };
 
 // 타임딜 등록
@@ -41,7 +41,7 @@ export const createTimeDeal = async (payload) => {
   }
 
   const response = await axios.post(`${API_BASE_URL}/api/timedeals`, payload, { headers: getAuthHeader() });
-  return response.data;
+  return response.data.data;
 };
 
 // 타임딜 수정
@@ -55,7 +55,7 @@ export const updateTimeDeal = async (id, payload) => {
   }
 
   const response = await axios.put(`${API_BASE_URL}/api/timedeals/${id}`, payload, { headers: getAuthHeader() });
-  return response.data;
+  return response.data.data;
 };
 
 // 타임딜 삭제
@@ -69,7 +69,7 @@ export const deleteTimeDeal = async (id) => {
   }
 
   const response = await axios.delete(`${API_BASE_URL}/api/timedeals/${id}`, { headers: getAuthHeader() });
-  return response.data;
+  return response.data.data;
 };
 
 export default { getTimeDeals, getTimeDeal, createTimeDeal, updateTimeDeal, deleteTimeDeal };

@@ -29,7 +29,7 @@ export const createOrder = async (timedealId, quantity = 1) => {
     userId: user?.id,
     amount: quantity,
   });
-  return response.data;
+  return response.data.data;
 };
 
 // 결제 처리 — POST /api/orders/{orderId}/pay
@@ -50,7 +50,7 @@ export const payOrder = async (orderId, paymentMethod, pgResponse) => {
     paymentMethod,
     pgResponse,  // PG 결과 전달 (PortOne 콜백 등)
   });
-  return response.data;
+  return response.data.data;
 };
 
 // 주문 조회 — GET /api/orders/{orderId}
@@ -65,7 +65,7 @@ export const getOrder = async (orderId) => {
   }
 
   const response = await axios.get(`${API_BASE_URL}/api/orders/${orderId}`);
-  return response.data;
+  return response.data.data;
 };
 
 export default { createOrder, payOrder, getOrder };
