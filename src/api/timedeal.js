@@ -16,7 +16,8 @@ const mapDeal = (deal) => ({
   discountPrice: deal.product?.salePrice ?? deal.product?.originPrice ?? 0,
   stock: deal.remainingQuantity ?? deal.dealQuantity ?? 0,
   totalStock: deal.dealQuantity ?? 0,
-  status: deal.status,
+  // 백엔드 PENDING → 프론트 UPCOMING으로 정규화
+  status: deal.status === 'PENDING' ? 'UPCOMING' : deal.status,
   startTime: deal.startTime,
   endTime: deal.endTime,
   brandName: deal.product?.brandName ?? '',
