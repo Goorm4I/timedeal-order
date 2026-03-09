@@ -10,7 +10,7 @@ let nextId = Math.max(...mockTimeDeals.map(d => d.id)) + 1;
 // 백엔드 응답 → 프론트 형식 변환
 const mapDeal = (deal) => ({
   id: deal.id,
-  productName: deal.product?.name ?? '',
+  productName: deal.product?.name ?? '상품명 없음',
   productImage: deal.product?.thumbnailUrl ?? `https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop&q=80`,
   originalPrice: deal.product?.originPrice ?? 0,
   discountPrice: deal.product?.salePrice ?? deal.product?.originPrice ?? 0,
@@ -34,7 +34,7 @@ export const getTimeDeals = async () => {
   return (response.data.data ?? []).map(mapDeal);
 };
 
-// 타임딜 상세 조회
+// 타임딜 상세 조회 (백엔드 단건 API 없음 → 목록에서 필터링)
 export const getTimeDeal = async (id) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -43,8 +43,11 @@ export const getTimeDeal = async (id) => {
     return deal;
   }
 
-  const response = await axios.get(`${API_BASE_URL}/api/v1/time-deals/${id}`);
-  return mapDeal(response.data.data);
+  const response = await axios.get(`${API_BASE_URL}/api/v1/time-deals`);
+  const deals = response.data.data ?? [];
+  const deal = deals.find(d => d.id === id || String(d.id) === String(id));
+  if (!deal) throw new Error('타임딜을 찾을 수 없습니다.');
+  return mapDeal(deal);
 };
 
 // 타임딜 등록
