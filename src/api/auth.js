@@ -25,7 +25,9 @@ export const login = async ({ email, password, remember }) => {
   const { accessToken, refreshToken } = response.data.data;
   localStorage.setItem('accessToken', accessToken);
   localStorage.setItem('refreshToken', refreshToken);
-  const userData = { email };
+  // JWT subject에서 userId 추출 (백엔드가 sub: userId로 발급)
+  const payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  const userData = { id: payload.sub, email };
   const storage = remember ? localStorage : sessionStorage;
   storage.setItem('user', JSON.stringify(userData));
   return userData;
