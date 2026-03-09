@@ -14,10 +14,13 @@ const mapDeal = (deal) => ({
   productImage: deal.product?.thumbnailUrl ?? `https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop&q=80`,
   originalPrice: deal.product?.originPrice ?? 0,
   discountPrice: deal.product?.salePrice ?? deal.product?.originPrice ?? 0,
-  stock: deal.remainingQuantity ?? deal.dealQuantity ?? 0,
-  totalStock: deal.dealQuantity ?? 0,
-  // 백엔드 PENDING → 프론트 UPCOMING으로 정규화
-  status: deal.status === 'PENDING' ? 'UPCOMING' : deal.status,
+  stock: deal.remainingQuantity ?? deal.totalQuantity ?? 0,
+  totalStock: deal.dealQuantity ?? deal.totalQuantity ?? 0,
+  // 백엔드 상태 → 프론트 상태 정규화
+  // PENDING → UPCOMING, EXPIRED → ENDED
+  status: deal.status === 'PENDING' ? 'UPCOMING'
+        : deal.status === 'EXPIRED' ? 'ENDED'
+        : deal.status,
   startTime: deal.startTime,
   endTime: deal.endTime,
   brandName: deal.product?.brandName ?? '',
