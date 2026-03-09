@@ -14,8 +14,8 @@ export const getTimeDeals = async () => {
     return [...mockData];
   }
 
-  const response = await axios.get(`${API_BASE_URL}/api/timedeals`);
-  return response.data.data;
+  const response = await axios.get(`${API_BASE_URL}/api/v1/time-deals`);
+  return response.data.data ?? [];
 };
 
 // 타임딜 상세 조회
@@ -27,7 +27,7 @@ export const getTimeDeal = async (id) => {
     return deal;
   }
 
-  const response = await axios.get(`${API_BASE_URL}/api/timedeals/${id}`);
+  const response = await axios.get(`${API_BASE_URL}/api/v1/time-deals/${id}`);
   return response.data.data;
 };
 
@@ -40,7 +40,7 @@ export const createTimeDeal = async (payload) => {
     return newDeal;
   }
 
-  const response = await axios.post(`${API_BASE_URL}/api/timedeals`, payload, { headers: getAuthHeader() });
+  const response = await axios.post(`${API_BASE_URL}/api/v1/time-deals`, payload, { headers: getAuthHeader() });
   return response.data.data;
 };
 
@@ -54,7 +54,7 @@ export const updateTimeDeal = async (id, payload) => {
     return mockData[idx];
   }
 
-  const response = await axios.put(`${API_BASE_URL}/api/timedeals/${id}`, payload, { headers: getAuthHeader() });
+  const response = await axios.put(`${API_BASE_URL}/api/v1/time-deals/${id}`, payload, { headers: getAuthHeader() });
   return response.data.data;
 };
 
@@ -68,7 +68,7 @@ export const deleteTimeDeal = async (id) => {
     return { success: true };
   }
 
-  const response = await axios.delete(`${API_BASE_URL}/api/timedeals/${id}`, { headers: getAuthHeader() });
+  const response = await axios.delete(`${API_BASE_URL}/api/v1/time-deals/${id}`, { headers: getAuthHeader() });
   return response.data.data;
 };
 
