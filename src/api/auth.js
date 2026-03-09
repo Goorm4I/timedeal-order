@@ -51,25 +51,65 @@ export const register = async ({ email, password, name, phone }) => {
   return response.data.data;
 };
 
-// 배송지 저장 (localStorage에 유저별로 저장)
-export const saveAddress = ({ name, phone, zipcode, address, addressDetail }) => {
+// 백엔드 배송지 필드 → 프론트 형식 변환
+const mapAddress = (addr) => ({
+  id: addr.id,
+  name: addr.recipientName,
+  phone: addr.phoneNumber,
+  zipcode: addr.zipCode,
+  address: addr.baseAddress,
+  addressDetail: addr.detailAddress,
+  isDefault: addr.isDefault,
+});
+
+// 배송지 저장 — 백엔드 API + localStorage 캐시
+export const saveAddress = async ({ name, phone, zipcode, address, addressDetail }) => {
   const user = getCurrentUser();
   if (!user) return;
   const addressData = { name, phone, zipcode, address, addressDetail };
+
+  if (!USE_MOCK) {
+    try {
+      await axios.post(`${API_BASE_URL}/api/v1/users/me/addresses`, {
+        recipientName: name,
+        phoneNumber: phone,
+        zipCode: zipcode,
+        baseAddress: address,
+        detailAddress: addressDetail,
+        isDefault: true,
+      }, { headers: getAuthHeader() });
+    } catch (_) {
+      // 백엔드 실패 시 localStorage fallback
+    }
+  }
+
   localStorage.setItem(`address_${user.id}`, JSON.stringify(addressData));
-  // 현재 유저 세션에도 반영
-  const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
-  const updated = { ...user, zipcode, address, addressDetail };
-  storage.setItem('user', JSON.stringify(updated));
   return addressData;
 };
 
-// 배송지 조회
+// 배송지 조회 — localStorage 캐시 (동기, 즉시 반환)
 export const getAddress = () => {
   const user = getCurrentUser();
   if (!user) return null;
   const data = localStorage.getItem(`address_${user.id}`);
   return data ? JSON.parse(data) : null;
+};
+
+// 배송지 목록 백엔드에서 조회 → localStorage 캐시 갱신 (비동기)
+export const fetchAddresses = async () => {
+  const user = getCurrentUser();
+  if (!user || USE_MOCK) return null;
+  try {
+    const res = await axios.get(`${API_BASE_URL}/api/v1/users/me/addresses`, { headers: getAuthHeader() });
+    const list = res.data.data ?? [];
+    if (list.length > 0) {
+      const addr = list.find(a => a.isDefault) ?? list[0];
+      const mapped = mapAddress(addr);
+      localStorage.setItem(`address_${user.id}`, JSON.stringify(mapped));
+      return mapped;
+    }
+  } catch (_) {}
+  return null;
 };
 
 // 로그아웃

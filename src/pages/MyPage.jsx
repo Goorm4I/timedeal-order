@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getCurrentUser, getAddress, saveAddress, logout } from '../api/auth';
+import { getCurrentUser, getAddress, saveAddress, fetchAddresses, logout } from '../api/auth';
 
 /* ── 결제 비밀번호는 localStorage에 유저별 저장 ── */
 const getPayPw = (userId) => localStorage.getItem(`paypw_${userId}`) || null;
@@ -139,12 +139,12 @@ const MenuItem = ({ icon, label, isOpen, onToggle, children }) => (
 
 /* ── 1. 배송지 관리 ── */
 const AddressSection = ({ user }) => {
-  const existing = getAddress();
-  const [form, setForm] = useState(existing || { zipcode: '', address: '', addressDetail: '' });
+  const [form, setForm] = useState(getAddress() || { zipcode: '', address: '', addressDetail: '' });
   const [errors, setErrors] = useState({});
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    fetchAddresses().then(addr => { if (addr) setForm(addr); });
     if (!document.getElementById('kakao-postcode-script')) {
       const script = document.createElement('script');
       script.id = 'kakao-postcode-script';
@@ -170,18 +170,18 @@ const AddressSection = ({ user }) => {
     if (!form.zipcode || !form.address) newErrors.address = '주소 검색을 해주세요.';
     if (!form.addressDetail) newErrors.addressDetail = '상세주소를 입력해주세요.';
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
-    saveAddress(form);
+    saveAddress(form); // async지만 UI는 즉시 반응
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   return (
     <div className="pt-4 space-y-3">
-      {existing && (
+      {form.address && (
         <div className="text-sm text-brand-600 bg-white rounded-xl p-3 border border-brand-100">
           <p className="font-medium text-brand-800">현재 배송지</p>
-          <p className="mt-1">({existing.zipcode}) {existing.address}</p>
-          <p className="text-brand-500">{existing.addressDetail}</p>
+          <p className="mt-1">({form.zipcode}) {form.address}</p>
+          <p className="text-brand-500">{form.addressDetail}</p>
         </div>
       )}
       <div className="flex gap-2">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, getAddress, saveAddress } from '../api/auth';
+import { getCurrentUser, getAddress, saveAddress, fetchAddresses } from '../api/auth';
 
 const AddressManager = () => {
   const navigate = useNavigate();
@@ -11,11 +11,13 @@ const AddressManager = () => {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // 기존 배송지 불러오기
+  // 기존 배송지 불러오기 (localStorage 캐시 → 백엔드 갱신)
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    const existing = getAddress();
-    if (existing) setForm(existing);
+    const cached = getAddress();
+    if (cached) setForm(cached);
+    // 백엔드에서 최신 배송지 가져와 캐시 갱신
+    fetchAddresses().then(addr => { if (addr) setForm(addr); });
 
     // 카카오 주소 API 스크립트 동적 로드
     if (!document.getElementById('kakao-postcode-script')) {
@@ -53,7 +55,7 @@ const AddressManager = () => {
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     try {
       setLoading(true);
-      saveAddress(form);
+      await saveAddress(form);
       setSaved(true);
       setTimeout(() => navigate(-1), 1200);
     } finally {
