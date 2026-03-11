@@ -29,7 +29,7 @@ export const createOrderSheet = async (skuId, quantity = 1) => {
 // ── 주문 확정 ─────────────────────────────────────────────────────
 // POST /api/v1/orders/submit
 // 멱등성: checkoutId가 DB UNIQUE 제약으로 중복 차단됨
-export const submitOrder = async (checkoutId, shippingAddressId, paymentMethod) => {
+export const submitOrder = async (checkoutId, shippingAddressId, paymentMethod, pgImpUid) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 800));
     return { orderId: checkoutId };
@@ -37,7 +37,7 @@ export const submitOrder = async (checkoutId, shippingAddressId, paymentMethod) 
 
   const res = await axios.post(
     `${API_BASE_URL}/api/v1/orders/submit`,
-    { checkoutId: Number(checkoutId), shippingAddressId, paymentMethod },
+    { checkoutId: Number(checkoutId), shippingAddressId, paymentMethod, pgImpUid },
     { headers: getAuthHeader() }
   );
   return res.data.data; // { checkoutId }

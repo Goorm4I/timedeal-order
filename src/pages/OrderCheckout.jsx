@@ -82,7 +82,7 @@ const OrderCheckout = () => {
     setShowPGSimulator(false);
     setProcessing(true);
     try {
-      const result = await submitOrder(checkoutId, address?.id ?? null, paymentMethod);
+      const result = await submitOrder(checkoutId, address?.id ?? null, paymentMethod, pgResponse?.imp_uid);
       const orderId = result.checkoutId ?? checkoutId;
       const orderForResult = {
         ...result,
@@ -325,6 +325,7 @@ const OrderCheckout = () => {
         <PGSimulator
           deal={deal}
           paymentMethod={paymentMethod}
+          checkoutId={checkoutId}
           onComplete={handlePGComplete}
           onCancel={handlePGCancel}
         />

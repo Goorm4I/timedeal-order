@@ -65,7 +65,7 @@ const pgStyles = {
   },
 };
 
-const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
+const PGSimulator = ({ deal, paymentMethod, checkoutId, onComplete, onCancel }) => {
   const getInitialStep = () => {
     if (paymentMethod === 'bboshi') return 'auth'; // 주문서에서 이미 상품/금액/배송지 확인 완료
     if (paymentMethod === 'card') return 'processing';
@@ -79,16 +79,35 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
 
   const pg = pgStyles[paymentMethod];
 
-  // 카드: 마운트 즉시 Mock PG 호출
-  // 카카오/토스: 2초 후 자동 완료 (앱 연결 시뮬레이션)
+  // Mock PG 서버 결제 요청 → imp_uid 발급
+  const callMockPg = async () => {
+    try {
+      const res = await fetch(MOCK_PG_URL + '/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: String(checkoutId), amount: deal.discountPrice }),
+      });
+      const data = await res.json();
+      setPgResult(data.response ?? data);
+      if (data.code === 0 && data.response?.status === 'paid') {
+        setStep('done');
+        setTimeout(() => onComplete(data.response), 800);
+      } else {
+        setStep('pgFailed');
+      }
+    } catch (e) {
+      setPgResult({ message: '결제 서버와 통신 중 오류가 발생했습니다.' });
+      setStep('pgFailed');
+    }
+  };
+
+  // 카드: 마운트 즉시 진행 바 → 완료 후 Mock PG 호출
+  // 카카오/토스: 2초 앱 연결 시뮬레이션 → Mock PG 호출
   useEffect(() => {
     if (paymentMethod === 'card') {
       startCardPayment();
     } else if (paymentMethod === 'kakao' || paymentMethod === 'toss') {
-      const timer = setTimeout(() => {
-        setStep('done');
-        setTimeout(() => onComplete(null), 800);
-      }, 2000);
+      const timer = setTimeout(() => callMockPg(), 2000);
       return () => clearTimeout(timer);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -100,8 +119,7 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
       setProgress(Math.min(p, 100));
       if (p >= 100) {
         clearInterval(intervalRef.current);
-        setStep('done');
-        setTimeout(() => onComplete(null), 800);
+        callMockPg();
       }
     }, 80);
   };
@@ -115,8 +133,7 @@ const PGSimulator = ({ deal, paymentMethod, onComplete, onCancel }) => {
       setProgress(p);
       if (p >= 100) {
         clearInterval(intervalRef.current);
-        setStep('done');
-        setTimeout(() => onComplete(null), 800);
+        callMockPg();
       }
     }, 100);
   };
