@@ -12,10 +12,10 @@ const mapDeal = (deal) => ({
   id: deal.id,
   productName: deal.product?.name ?? '상품명 없음',
   productImage: deal.product?.thumbnailUrl ?? `https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop&q=80`,
-  originalPrice: deal.product?.originPrice ?? 0,
-  discountPrice: deal.product?.salePrice ?? deal.product?.originPrice ?? 0,
-  discountRate: deal.product?.originPrice > 0
-    ? Math.round((1 - (deal.product?.salePrice ?? deal.product?.originPrice) / deal.product?.originPrice) * 100)
+  originalPrice: parseFloat(deal.product?.originPrice) || 0,
+  discountPrice: parseFloat(deal.product?.salePrice ?? deal.product?.originPrice) || 0,
+  discountRate: parseFloat(deal.product?.originPrice) > 0
+    ? Math.round((1 - parseFloat(deal.product?.salePrice ?? deal.product?.originPrice) / parseFloat(deal.product?.originPrice)) * 100)
     : 0,
   stock: deal.remainingQuantity ?? deal.totalQuantity ?? 0,
   totalStock: deal.dealQuantity ?? deal.totalQuantity ?? 0,
