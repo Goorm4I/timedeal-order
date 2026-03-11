@@ -111,7 +111,8 @@ export const createTimeDeal = async (payload) => {
   return response.data.data;
 };
 
-// 타임딜 수정 (백엔드 수정 엔드포인트 없음 → 목록 재조회로 UI 갱신)
+// 타임딜 수정 (스케줄/재고 변경)
+// 백엔드: PUT /api/v1/admin/time-deals/{id}
 export const updateTimeDeal = async (id, payload) => {
   if (USE_MOCK) {
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -121,9 +122,18 @@ export const updateTimeDeal = async (id, payload) => {
     return mockData[idx];
   }
 
-  // 백엔드에 수정 API 없음: 기존 딜 삭제 후 재생성 패턴은 지원 안함
-  // 수정 성공 응답을 반환하여 UI가 최신 목록을 재조회하게 함
-  throw new Error('백엔드에서 타임딜 수정 API를 지원하지 않습니다.');
+  const backendPayload = {
+    startTime: payload.startTime,
+    endTime: payload.endTime,
+    dealQuantity: payload.totalStock ?? payload.stock,
+  };
+
+  const response = await axios.put(
+    `${API_BASE_URL}/api/v1/admin/time-deals/${id}`,
+    backendPayload,
+    { headers: getAuthHeader() }
+  );
+  return response.data.data;
 };
 
 // 타임딜 삭제 (백엔드 삭제 엔드포인트 없음)
