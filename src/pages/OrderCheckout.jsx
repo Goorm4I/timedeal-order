@@ -59,7 +59,8 @@ const OrderCheckout = () => {
     setStockError(null);
     try {
       setProcessing(true);
-      const sheet = await createOrderSheet(Number(id));
+      const skuId = deal.skuId ?? Number(id);
+      const sheet = await createOrderSheet(skuId);
       setCheckoutId(sheet.checkoutId);
       setProcessing(false);
       setShowPGSimulator(true);
