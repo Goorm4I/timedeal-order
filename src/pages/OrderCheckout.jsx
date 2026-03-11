@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getTimeDeal } from '../api/timedeal';
-import { createOrder, payOrder } from '../api/order';
-import { getCurrentUser, getAddress } from '../api/auth';
+import { createOrderSheet, submitOrder } from '../api/order';
+import { getCurrentUser, getAddress, fetchAddresses } from '../api/auth';
 import PGSimulator from '../components/PGSimulator';
 
 const OrderCheckout = () => {
@@ -14,12 +14,13 @@ const OrderCheckout = () => {
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [showPGSimulator, setShowPGSimulator] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState(null);
+  const [checkoutId, setCheckoutId] = useState(null);
+  const [address, setAddress] = useState(getAddress());
   const [error, setError] = useState(null);
   const [stockError, setStockError] = useState(null);
+  const submittingRef = useRef(false); // 멱등성: submit 중복 방지
 
   const user = getCurrentUser();
-  const address = getAddress();
 
   // ── 포인트/쿠폰 (추후 백엔드 연동) ──────────────────────────
   // TODO: 실제 보유 포인트는 GET /api/users/me/points 로 조회
@@ -33,6 +34,8 @@ const OrderCheckout = () => {
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
     fetchDeal();
+    // 백엔드에서 addressId 포함한 최신 주소 로드 (submit 시 필요)
+    fetchAddresses().then(addr => { if (addr) setAddress(addr); });
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDeal = async () => {
@@ -50,14 +53,15 @@ const OrderCheckout = () => {
     }
   };
 
-  // 결제하기 클릭 → 재고 선점(Redis DECR) → PG 진입
+  // 결제하기 클릭 → CheckoutSession 생성(checkoutId 발급) → PG 진입
   const handlePay = async () => {
     if (!paymentMethod) return;
     setStockError(null);
     try {
       setProcessing(true);
-      const { orderId } = await createOrder(id);
-      setCurrentOrderId(orderId);
+      const skuId = deal.skuId ?? Number(id);
+      const sheet = await createOrderSheet(skuId);
+      setCheckoutId(sheet.checkoutId);
       setProcessing(false);
       setShowPGSimulator(true);
     } catch (err) {
@@ -70,23 +74,32 @@ const OrderCheckout = () => {
     }
   };
 
-  // PG 완료 → 결제 확정 API → 결과 페이지
+  // PG 완료 → 주문 확정 (checkoutId 멱등성 키)
   const handlePGComplete = async (pgResponse) => {
+    // 멱등성: 이미 submit 중이면 중복 호출 차단
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setShowPGSimulator(false);
     setProcessing(true);
     try {
-      const result = await payOrder(currentOrderId, paymentMethod, pgResponse);
+      const result = await submitOrder(checkoutId, address?.id ?? null, paymentMethod, pgResponse?.imp_uid);
+      const orderId = result.checkoutId ?? checkoutId;
       const orderForResult = {
         ...result,
         productName: deal.productName,
         quantity: 1,
         totalPrice: deal.discountPrice,
       };
-      navigate(`/order/${currentOrderId}`, {
+      navigate(`/order/${orderId}`, {
         state: { order: orderForResult, paymentMethod, pgResponse },
       });
     } catch (err) {
-      setError(err.message);
+      submittingRef.current = false;
+      setError(err.response?.status === 409
+        ? '이미 처리된 주문입니다.'
+        : err.message || '주문 확정 중 오류가 발생했어요'
+      );
       setProcessing(false);
     }
   };
@@ -313,6 +326,7 @@ const OrderCheckout = () => {
         <PGSimulator
           deal={deal}
           paymentMethod={paymentMethod}
+          checkoutId={checkoutId}
           onComplete={handlePGComplete}
           onCancel={handlePGCancel}
         />

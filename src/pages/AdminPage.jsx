@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getTimeDeals, createTimeDeal, updateTimeDeal, deleteTimeDeal } from '../api/timedeal';
+import { getTimeDeals, createTimeDeal, updateTimeDeal, deleteTimeDeal, getCategories } from '../api/timedeal';
 import { getCurrentUser, logout } from '../api/auth';
 import { USE_MOCK } from '../api/config';
 
@@ -18,6 +18,8 @@ const STATUS_LABEL = {
 /* ── 빈 폼 초기값 ── */
 const EMPTY_FORM = {
   productName: '',
+  brandName: '',
+  categoryId: '',
   originalPrice: '',
   discountPrice: '',
   stock: '',
@@ -36,6 +38,7 @@ const AdminPage = () => {
   const user = getCurrentUser();
 
   const [deals, setDeals] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('list'); // 'list' | 'form'
   const [editTarget, setEditTarget] = useState(null); // null = 신규, deal = 수정
@@ -48,7 +51,10 @@ const AdminPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  useEffect(() => { fetchDeals(); }, []);
+  useEffect(() => {
+    fetchDeals();
+    getCategories().then(setCategories).catch(() => {});
+  }, []);
 
   const fetchDeals = async () => {
     try {
@@ -79,6 +85,8 @@ const AdminPage = () => {
     setEditTarget(deal);
     setForm({
       productName:   deal.productName || '',
+      brandName:     deal.brandName || '',
+      categoryId:    deal.categoryId || '',
       originalPrice: deal.originalPrice ?? '',
       discountPrice: deal.discountPrice ?? '',
       stock:         deal.stock ?? '',
@@ -146,6 +154,8 @@ const AdminPage = () => {
 
     const payload = {
       productName:   form.productName.trim(),
+      brandName:     form.brandName?.trim() || '',
+      categoryId:    form.categoryId || (categories[0]?.id ?? null),
       originalPrice: Number(form.originalPrice),
       discountPrice: Number(form.discountPrice),
       stock:         Number(form.stock),
@@ -385,6 +395,24 @@ const AdminPage = () => {
                 placeholder="ex) 오리지널 닭가슴살 | 강아지 간식 (파이프 분리 시 첫 줄이 타이틀로 사용)"
                 className={inputCls(errors.productName)} />
             </FormField>
+
+            {/* 브랜드명 + 카테고리 */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="브랜드명">
+                <input name="brandName" value={form.brandName} onChange={handleField}
+                  placeholder="ex) 뽀시래기 프리미엄"
+                  className={inputCls()} />
+              </FormField>
+              <FormField label="카테고리 *">
+                <select name="categoryId" value={form.categoryId} onChange={handleField}
+                  className="w-full px-4 py-3 rounded-2xl border border-brand-200 focus:outline-none focus:border-brand-500 text-brand-800 text-sm bg-white transition">
+                  <option value="">카테고리 선택</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
 
             {/* 가격 */}
             <div className="grid grid-cols-2 gap-4">
